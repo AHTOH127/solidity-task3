@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "./Auction.sol";
 import "./Libraries/PriceConverter.sol";
 
@@ -73,11 +74,8 @@ contract AuctionFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     require(nft.ownerOf(params.tokenId) == msg.sender, "AuctionFactory: not owner");
     require(nft.isApprovedForAll(msg.sender, address(this)) || nft.getApproved(params.tokenId) == address(this), "AuctionFactory: not approved");
 
-    // 交易唯一标识
-    bytes32 salt = keccak256(abi.encodePacked(params.nftContract, params.tokenId, block.timestamp, msg.sender));
-
-    // 部署UUPS代理合约
-    auction = address(new Auction{salt: salt}());
+    // 创建新的UUPS代理合约
+    auction = address(new ERC1967Proxy(auctionImpl, ""));
 
     // 初始化UUPS代理合约
     Auction(auction).initialize(params);
